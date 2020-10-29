@@ -10,7 +10,8 @@ from adafruit_mcp3xxx.analog_in import AnalogIn
 chan_ldr = None
 chan_temp = None
 btn = 23
-rate = 1
+samplingRate = {0:1, 1:5, 2:10}
+rate = 0
 start_time = 0
 
 runtime = 'Runtime'
@@ -21,30 +22,32 @@ lv = "LDR Voltage"
 
 def values_thread():
 
-    thread = threading.Timer(rate, values_thread)
+    thread = threading.Timer(samplingRate[rate], values_thread)
     thread.daemon = True
     thread.start()
 
     current_time = int( time.time() - start_time )
 
-    print("{:<15}{:<15}{:<15.2f}{:<15}{:<15.2f}".format( str(current_time) + "s",
-                                                        chan_temp.value,
-                                                        (chan_temp.voltage - 0.5)/0.01,
-                                                        chan_ldr.value, chan_ldr.voltage))
+    str_runtime = str(current_time) + "s"
+    str_tempValue = chan_temp.value
+    str_temp = str( round( (chan_temp.voltage - 0.5)/0.01, 2 ) ) + " C"
+    str_ldrValue = chan_ldr.value
+    str_ldrVoltage = str( round( chan_ldr.voltage, 2 )) + " V"
 
+    print("{:<15}{:<15}{:<15}{:<15}{:<15}".format( str_runtime,
+                                                        str_tempValue,
+                                                        str_temp,
+                                                        str_ldrValue,
+                                                        str_ldrVoltage))
 
 
 def btn_pressed(channel):
 
     global rate
-    if rate == 1:
-        rate = 5
-    elif rate == 5:
-        rate = 10
-    else:
-        rate = 1
+
+    rate = (rate + 1) % 3
     
-    print(f"Sampling at : {rate}s")
+    print(f"Sampling at : {samplingRate[rate]}s")
     print("{:<15}{:<15}{:<15}{:<15}{:<15}".format( runtime, read, temp, lr, lv))
 
 
