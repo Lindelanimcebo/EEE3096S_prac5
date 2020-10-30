@@ -9,13 +9,14 @@ import RPi.GPIO as GPIO
 import time
 from adafruit_mcp3xxx.analog_in import AnalogIn
 
-chan_ldr = None
-chan_temp = None
-btn = 23
-samplingRate = {0:1, 1:5, 2:10}
-rate = 0
-start_time = 0
+chan_ldr = None                  # ldr channel
+chan_temp = None                 # temp sensor channel
+btn = 23                         # button pin (BCM)
+samplingRate = {0:1, 1:5, 2:10}  # sampling rates
+rate = 0                         # current sampling rate position
+start_time = 0                   # program start time
 
+# Headings
 runtime = 'Runtime'
 read = "Reading"
 temp = "Temp"
@@ -23,13 +24,15 @@ lr = "LDR Reading"
 lv = "LDR Voltage"
 
 def values_thread():
-
+    # create the thread to run after a delay from the sampling rate
     thread = threading.Timer(samplingRate[rate], values_thread)
     thread.daemon = True
     thread.start()
 
+    # update runtime
     current_time = int( time.time() - start_time )
 
+    # Displaying ldr and temp readings
     str_runtime = str(current_time) + "s"
     str_tempValue = chan_temp.value
     str_temp = str( round( (chan_temp.voltage - 0.5)/0.01, 2 ) ) + " C"
@@ -44,7 +47,7 @@ def values_thread():
 
 
 def btn_pressed(channel):
-
+    # Update rate
     global rate
 
     rate = (rate + 1) % 3
@@ -71,7 +74,7 @@ def setup():
     chan_ldr = AnalogIn( mcp, MCP.P0)
     chan_temp = AnalogIn( mcp, MCP.P1)
 
-    #GPIO.setmode(GPIO.BOARD)
+    # setup button
     GPIO.setup(btn, GPIO.IN)
     GPIO.setup(btn, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(btn, GPIO.FALLING, callback=btn_pressed, bouncetime=200)
@@ -81,8 +84,10 @@ def setup():
 if __name__ == "__main__":
     try:
         setup()
-        start_time = time.time()
 
+        # program start time.
+        start_time = time.time()
+        print(f"Sampling at : {samplingRate[rate]}s")
         print("{:<15}{:<15}{:<15}{:<15}{:<15}".format( runtime, read, temp, lr, lv))
 
         values_thread()
